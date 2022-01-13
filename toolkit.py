@@ -500,8 +500,8 @@ def prepare_data(symbol, fromdt, todt, datapath=None):
     # prepare 1m backtesting dataq
     """
     # df9path = f'..//data//{symbol}_1m_{mode}.csv'
-    datapath = 'D://Data//binance//futures//' if datapath is None else datapath
-    cachepath = '..//data//'
+    datapath = 'Data/binance/futures/' if datapath is None else datapath
+    cachepath = '../data/'
     filename = f'{symbol}_{fromdt}_{todt}_1m.csv'
     if os.path.exists(cachepath+filename):  # check if .//Data// exist needed csv file
         df = pd.read_csv(cachepath+filename)

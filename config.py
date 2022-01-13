@@ -6,8 +6,8 @@ DEVELOPMENT = "development"
 COIN_TARGET = "BTC"
 COIN_REFER = "USDT"
 
-ENV = os.getenv("ENVIRONMENT", PRODUCTION)
-DEBUG = False
+ENV = os.getenv("ENVIRONMENT", DEVELOPMENT)
+DEBUG = True
 
 # futures
 BINANCE = {
