@@ -98,7 +98,6 @@ class TestStrategy1(bt.Strategy):
         # 如果有订单正在挂起，不操作
         if self.order:
             return
-
         # 如果没有持仓则买入
         if not self.position:
             # 今天的收盘价在均线价格之上 
@@ -106,14 +105,14 @@ class TestStrategy1(bt.Strategy):
                 # 买入
                 self.log('买入单, %.2f' % self.dataclose[0])
                     # 跟踪订单避免重复
-                self.order = self.buy(price=0.2)
+                self.order = self.buy(size=1)
         else:
             # 如果已经持仓，收盘价在均线价格之下
             if self.dataclose[0] < self.sma[0]:
                 # 全部卖出
                 self.log('卖出单, %.2f' % self.dataclose[0])
                 # 跟踪订单避免重复
-                self.order = self.sell(price=0.2)
+                self.order = self.buy(size=1)
 
 # Create a Stratey
 class TestStrategy(bt.Strategy):
@@ -153,7 +152,7 @@ class TestStrategy(bt.Strategy):
 
 def main():
     cerebro = bt.Cerebro(stdstats=True)
-
+    print("====>>>>",BINANCE.get("key"),BINANCE.get("secret"))
     if ENV == PRODUCTION:  # Live trading with Binance
         broker_config = {
             'apiKey': BINANCE.get("key"),
@@ -165,7 +164,7 @@ def main():
         }
 
         store = CCXTStore(exchange='binanceusdm', currency=COIN_REFER, config=broker_config, retries=5, debug=False,
-                          sandbox=True)
+                          sandbox=False)
 
         broker_mapping = {
             'order_types': {
@@ -189,24 +188,24 @@ def main():
         cerebro.setbroker(broker)
 
         hist_start_date = dt.datetime.utcnow() - dt.timedelta(minutes=3000)
-        with open('dataset/symbol_config.yaml', mode='r') as f:
-            symbol_config = f.read()
-            symbol_config = yaml.load(  symbol_config, Loader=yaml.FullLoader)
-            for symbol in symbol_config.keys():
-                datakl = store.getdata(
-                    dataname=f'{symbol}',
-                    name=f'{symbol}',
+        data = store.getdata(
+                    dataname=f'{"BTCUSDT"}',
+                    name=f'{"BTCUSDT"}',
                     timeframe=bt.TimeFrame.Minutes,
                     fromdate=hist_start_date,
                     compression=1,
                     ohlcv_limit=10000
                 )
-                dataha = datakl.clone()
-                dataha.addfilter(bt.filters.HeikinAshi(dataha))
-                # Add the feed
-                cerebro.adddata(datakl, name=f'{symbol}_Kline')
-                cerebro.adddata(dataha, name=f'{symbol}_Heikin')
 
+        cerebro.adddata(data)
+        # data = cerebro.resampledata(data,
+        #                         timeframe=bt.TimeFrame.Ticks,
+        #                         compression=1)
+
+
+
+        cerebro.broker.setcommission(commission=0.0004)
+        cerebro.addsizer(FullMoney)
     else:  # Backtesting with CSV file
         data = btfeeds.GenericCSVData(
         dataname="1.txt",
@@ -217,30 +216,31 @@ def main():
         close=7, # 确认
         volume=16,
         openinterest=-1,
-        timeframe=bt.TimeFrame.Minutes, 
+        timeframe=bt.TimeFrame.Ticks, 
         compression=1,
     )
-      
-        data = cerebro.resampledata(data,
-                                timeframe=bt.TimeFrame.Ticks,
-                                compression=1)
+        cerebro.adddata(data)
+        # data = cerebro.resampledata(data,
+        #                         timeframe=bt.TimeFrame.Ticks,
+        #                         compression=1)
 
-        broker = cerebro.getbroker()
-        broker.setcommission(commission=0.0004, name=COIN_TARGET)  # Simulating exchange fee
-        broker.setcash(100000.0)
+        cerebro.broker.setcash(100000.0)
+        cerebro.broker.setcommission(commission=0.0004)
         cerebro.addsizer(FullMoney)
 
-
+    #bt.observers.BuySell = MyBuySell
 #    Analyzers to evaluate trades and strategies
-  #  SQN = Average( profit / risk ) / StdDev( profit / risk ) x SquareRoot( number of trades )
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
     cerebro.addanalyzer(bt.analyzers.SQN, _name="sqn")
-
     # Include Strategy
     cerebro.addstrategy(TestStrategy1)
     
+    # 引擎运行前打印期出资金
+    print('组合期初资金: %.2f' % cerebro.broker.getvalue())
     cerebro.run()
-    cerebro.plot(iplot=False)
+    # 引擎运行后打期末资金
+    print('组合期末资金: %.2f' % cerebro.broker.getvalue())
+    cerebro.plot()
 
 
 
