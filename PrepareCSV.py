@@ -4,8 +4,8 @@ import os
 
 
 def prepare_data(time0, time9, symbol, fgCov=False, prep_new=True, mode='test'):
-    path = 'D://Data//binance//futures//'
-    df9path = f'..//data//{symbol}_1m_{mode}.csv'
+    path = '/home/ubuntu/backtrader-binance-futures/Data/binance/futures/'
+    df9path = f'../data/{symbol}_1m_{mode}.csv'
     if prep_new:
         time0 = pd.to_datetime(time0)
         time0 = datetime.datetime.date(time0)
@@ -15,7 +15,8 @@ def prepare_data(time0, time9, symbol, fgCov=False, prep_new=True, mode='test'):
         df9 = pd.DataFrame()
         while time5 <= time9:
             try:
-                file = path + str(time5) + '//' + str(time5) + '_' + symbol + '_1m.csv'
+                file = path + str(time5) + '/' + str(time5) + '_' + symbol + '_1m.csv'
+                print("====>>>",file)
                 df0 = pd.read_csv(file)
                 df0['datetime'] = [x[:19] for x in df0['candle_begin_time']]
                 df0.set_index('datetime', drop=True, inplace=True)
@@ -23,7 +24,7 @@ def prepare_data(time0, time9, symbol, fgCov=False, prep_new=True, mode='test'):
                 df0.sort_index(ascending=True, inplace=True)
             except:
                 time5 = time5 + datetime.timedelta(days=1)
-                file = path + str(time5) + '//' + str(time5) + '_' + symbol + '_1m.csv'
+                file = path + str(time5) + '/' + str(time5) + '_' + symbol + '_1m.csv'
                 df0 = pd.read_csv(file)
                 df0['datetime'] = [x[:19] for x in df0['candle_begin_time']]
                 df0.set_index('datetime', drop=True, inplace=True)

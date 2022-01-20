@@ -1,0 +1,1 @@
+cat  1| cut -d',' -f4 | cut -d':' -f2 | cut -d' ' -f1 | awk '{s+=$1} END{print s}'
