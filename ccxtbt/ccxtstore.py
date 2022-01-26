@@ -59,6 +59,7 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
 
     # Supported granularities
     _GRANULARITIES = {
+        (bt.TimeFrame.Ticks, 1): '1s',
         (bt.TimeFrame.Minutes, 1): '1m',
         (bt.TimeFrame.Minutes, 3): '3m',
         (bt.TimeFrame.Minutes, 5): '5m',
@@ -122,16 +123,16 @@ class CCXTStore(with_metaclass(MetaSingleton, object)):
         if not self.exchange.has['fetchOHLCV']:
             raise NotImplementedError("'%s' exchange doesn't support fetching OHLCV data" % \
                                       self.exchange.name)
-
-        granularity = self._GRANULARITIES.get((timeframe, compression))
-        if granularity is None:
-            raise ValueError("backtrader CCXT module doesn't support fetching OHLCV "
-                             "data for time frame %s, comression %s" % \
-                             (bt.TimeFrame.getname(timeframe), compression))
-
-        if self.exchange.timeframes and granularity not in self.exchange.timeframes:
-            raise ValueError("'%s' exchange doesn't support fetching OHLCV data for "
-                             "%s time frame" % (self.exchange.name, granularity))
+        print("====>>>",timeframe, compression)
+        # granularity = self._GRANULARITIES.get((timeframe, compression))
+        # if granularity is None:
+        #     raise ValueError("backtrader CCXT module doesn't support fetching OHLCV "
+        #                      "data for time frame %s, comression %s" % \
+        #                      (bt.TimeFrame.getname(timeframe), compression))
+        granularity ='1m'
+        # if self.exchange.timeframes and granularity not in self.exchange.timeframes:
+        #     raise ValueError("'%s' exchange doesn't support fetching OHLCV data for "
+        #                      "%s time frame" % (self.exchange.name, granularity))
 
         return granularity
 

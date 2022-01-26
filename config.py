@@ -11,8 +11,8 @@ DEBUG = True
 
 # futures
 BINANCE = {
-  "key": "",
-  "secret": ""
+  "key": "myb90clRe1XVKladbBU0yivb46u81Ap8KrtAlRWNhkWa8SlCXNKfelqFtZTPCEHM",
+  "secret": "eHML7X58Lzq9oQYQORHgzU9YIZN1xLcVgXg9cVTIVqeefW7kzLzThPKubHaBkh5R"
 }
 
 # spot

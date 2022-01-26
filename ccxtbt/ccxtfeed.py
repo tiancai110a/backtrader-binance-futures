@@ -21,7 +21,7 @@
 ###############################################################################
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
+import traceback
 import time
 from collections import deque
 from datetime import datetime
@@ -89,7 +89,7 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
 
     def start(self, ):
         DataBase.start(self)
-
+        # 开一个 线程接受websocket断往queueu中放数据
         if self.p.fromdate:
             self._state = self._ST_HISTORBACK
             self.put_notification(self.DELAYED)
@@ -100,12 +100,16 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
             self.put_notification(self.LIVE)
 
     def _load(self):
+        # for line in traceback.format_stack():
+        #     print("===>",line.strip())
+        #print("====>>load")
         if self._state == self._ST_OVER:
             return False
 
         while True:
             if self._state == self._ST_LIVE:
                 if self._timeframe == bt.TimeFrame.Ticks:
+                    #print("====>>load1")
                     return self._load_ticks()
                 else:
                     self._fetch_ohlcv()
@@ -166,7 +170,6 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
                     print('Index Error: Data = {}'.format(data))
                 print('---- REQUEST END ----')
             else:
-
                 data = sorted(self.store.fetch_ohlcv(self.p.dataname, timeframe=granularity,
                                                      since=since, limit=limit, params=self.p.fetch_ohlcv_params))
 
@@ -205,21 +208,29 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
         else:
             trades = self.store.fetch_trades(self.p.dataname)
 
-        for trade in trades:
-            trade_id = trade['id']
 
-            if trade_id > self._last_id:
-                trade_time = datetime.strptime(trade['datetime'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                self._data.append((trade_time, float(trade['price']), float(trade['amount'])))
-                self._last_id = trade_id
+        trade = trades[-1]
+        price = trade['price']
+        trade_time = datetime.strptime(trade['datetime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        size = float(trade['amount'])
+        # for trade in trades:
+        #     trade_id = trade['id']
+        #     if trade_id > self._last_id:
+        #         price = trade['price']
+        #         trade_time = datetime.strptime(trade['datetime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+        #         size = float(trade['amount']
+        #         # self._data.append((trade_time, float(trade['price']), float(trade['amount'])))
+        #         # self._last_id = trade_id
+                
+        #print("==========>>>>>>>",trade['price'])
 
-        try:
-            trade = self._data.popleft()
-        except IndexError:
-            return None  # no data in the queue
+        # try:
+        #     trade = self._data.popleft()
+        # except IndexError:
+        #     return None  # no data in the queue
 
-        trade_time, price, size = trade
-
+        # trade_time, price, size = trade
+        print("======price1",price,trade_time)
         self.lines.datetime[0] = bt.date2num(trade_time)
         self.lines.open[0] = price
         self.lines.high[0] = price
