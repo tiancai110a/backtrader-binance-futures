@@ -22,7 +22,6 @@ import codecs
 
 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
-import toolkit as tk
 
 def main():
     cerebro = bt.Cerebro(stdstats=True)
@@ -84,9 +83,9 @@ def main():
                     step=200,
                     grid_num=10,
                     increase_mode = IncreaseMode.Exponent,
-                    capital =460,
-                    leverage = 7,
-                    init_price =38274,
+                    capital =150,
+                    leverage = 100,
+                    init_price =37750,
                     )
     else:  # Backtesting with CSV file
          # Include Strategy
@@ -144,8 +143,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("finished.")
         time = dt.datetime.now().strftime("%d-%m-%y %H:%M")
-        send_telegram_message("Bot finished by user at %s" % time)
     except Exception as err:
-        send_telegram_message("Bot finished with error: %s" % err)
         print("Finished with error: ", err)
         raise

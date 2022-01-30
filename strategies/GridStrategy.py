@@ -1,5 +1,6 @@
 from turtle import up
 import backtrader as bt
+from matplotlib.pyplot import step
 import numpy as np
 import time
 import config
@@ -7,6 +8,10 @@ import text
 from strategies.base import StrategyBase
 import math
 from enum import Enum
+import time
+import traceback
+
+
 class IncreaseMode(Enum):
         Exponent = 1
         Linear = 2
@@ -49,13 +54,19 @@ class GridStrategy(StrategyBase):
         self.grid_fail_count = 0 # 连续输掉的次数
         max_loss =  self.calc_max_loss()
         max_cap = self.calc_cap()
-        self.unit = self.params.capital*0.8*self.params.leverage/max_cap/self.params.init_price
-        self.init_value = self.broker.getvalue()
+        self.unit = self.params.capital*self.params.leverage/max_cap/self.params.init_price
+        self.init_value = self.broker.get_balance()
         
         
-        print('需要本金 (单位:份):',max_cap)
-        print('每轮最大亏损(单位:份):',max_loss)
-        print("加仓模式",increase_mode_to_str(self.params.increase_mode))
+        real_max_capital = max_cap * self.params.init_price*self.unit/self.params.leverage
+        real_max_loss = max_loss * self.params.init_price*self.unit/self.params.leverage
+        print('中文:',self.unit)
+        print('leverage:',self.params.leverage)
+        print('init capital:',real_max_capital) # 加仓需要准备的资金
+        print('max loss:',real_max_loss)        # 撤出之前最大亏损资金
+        print('need prepare capital:',real_max_capital+real_max_loss) # 需要准备这些钱 才能在网格退出之前不爆仓
+        print('init value:', self.init_value) # 初始资金
+        print("mode",increase_mode_to_str(self.params.increase_mode))
       
     def regrid(self, price):
         self.grid_execute = True
@@ -65,12 +76,20 @@ class GridStrategy(StrategyBase):
         self.start_price  = price
         self.positionMap = []
         self.grid_count = self.grid_count + 1
-        self.init_value = self.broker.getvalue()
+        self.init_value = self.broker.get_balance()
+        print("==========regrid=========")
+        print("upper",self.up)
+        print("lower",self.down)
+        print("start_price",self.start_price)
         
 
 
 
     def next(self):
+        # for line in traceback.format_stack():
+        #     print(line.strip())
+        #print(1)
+
         #if config.ENV != config.PRODUCTION:  # 回测在数据最后清仓
         i =  list(range(0, len(self.datas)))
         for (d,j) in zip(self.datas,i):
@@ -98,10 +117,20 @@ class GridStrategy(StrategyBase):
         for (d,j) in zip(self.datas,i):
             if len(d) == d.buflen()-2:
                 self.close(d,exectype=bt.Order.Market)
+                
+                
+                
     def clearPosition(self):
         print("close" ,self.down,self.up)
         self.close()       
         self.grid_execute =False
+        last_value =  self.broker.get_balance()
+        if last_value[0] < self.init_value[0]:
+            self.grid_fail_count = self.grid_fail_count + 1
+            
+        if self.grid_fail_count>3: # 连续三次亏损 直接退出
+            print("+++++++++++>>>>>>>>>>>>>>>>>> stop loss")
+            exit(0)
   
   
   
@@ -115,20 +144,24 @@ class GridStrategy(StrategyBase):
         
         measure = self.calcMeasure(direction,price)
         if direction =="buy":
-            #print("execute buy",measure,price)
+            print("execute buy",measure,price)
             self.buy(size=self.unit*measure)
             self.lastPrice = price
         else:
-            #print("execute sell",measure,price,self.lastPrice)
+            print("execute sell",measure,price,self.lastPrice)
             self.sell(size=self.unit*measure)
             self.lastPrice = price
+            
+            
+            
+            
     def stop(self):
-        last_value =  self.broker.getvalue()
-        if last_value < self.init_value:
+        last_value =  self.broker.get_balance()
+        if last_value[0] < self.init_value[0]:
             self.grid_fail_count = self.grid_fail_count + 1
             
-        # if self.grid_fail_count>3: # 连续三次亏损 直接退出
-        #     exit(0)
+        if self.grid_fail_count>3: # 连续三次亏损 直接退出
+            exit(0)
             
         msg =  "step:{}, grid:{},value:{}, position.size:{} , position.price:{} unit:{},grid_count:{}".format(self.params.step,self.params.grid_num,self.broker.getvalue(), self.position.size,self.position.price,self.unit,self.grid_count)
         self.log(msg)

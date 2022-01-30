@@ -109,7 +109,6 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
         while True:
             if self._state == self._ST_LIVE:
                 if self._timeframe == bt.TimeFrame.Ticks:
-                    #print("====>>load1")
                     return self._load_ticks()
                 else:
                     self._fetch_ohlcv()
@@ -230,7 +229,7 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
         #     return None  # no data in the queue
 
         # trade_time, price, size = trade
-        print("======price1",price,trade_time)
+        # print("======price1",price,trade_time)
         self.lines.datetime[0] = bt.date2num(trade_time)
         self.lines.open[0] = price
         self.lines.high[0] = price
@@ -256,7 +255,7 @@ class CCXTFeed(with_metaclass(MetaCCXTFeed, DataBase)):
         self.lines.low[0] = low
         self.lines.close[0] = close
         self.lines.volume[0] = volume
-
+    
         return True
 
     def haslivedata(self):
